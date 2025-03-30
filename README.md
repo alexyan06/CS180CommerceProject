@@ -1,6 +1,6 @@
 # CS180CommerceProject
 
-$ CommandExample
+Command Example
 register Alice password123 100.0 true
 register Bob securepass 50.0 false
 login Alice password123
