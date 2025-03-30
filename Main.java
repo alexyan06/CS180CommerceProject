@@ -31,5 +31,26 @@ public class Main {
         for (Message msg : db.getMessages()) {
             System.out.println(msg);
         }
+
+        //testing the delete methods
+        //testing the delete User method
+        db.deleteUser("Alice", "password123");
+        db.deleteUser("Bob", "securepass");
+        
+        //testing the delete Item method
+        db.deleteItem("Headphones");
+        
+        // Print Users after deletion
+        System.out.println("Users:");
+        for (String username : new String[]{"Alice", "Bob"}) {
+            User user = db.getUser(username);
+            System.out.println(user);
+        }
+
+        // Print Items after deletion
+        System.out.println("\nItems for Sale:");
+        for (Item item : db.getItems()) {
+            System.out.println(item);
+        }
     }
 }
