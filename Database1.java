@@ -69,4 +69,20 @@ public class Database1 {
     public synchronized ArrayList<Message> getMessages() {
         return new ArrayList<>(messages);
     }
+    
+    public synchronized void processTransaction(User buyer, User seller, Item boughtItem) {
+        if (buyer.getBalance() > boughtItem.getCost()) {
+            System.out.println("Transaction invalid. Buyer balance is less than item cost.");
+        } else {
+            buyer.setBalance(buyer.getBalance() - boughtItem.getCost());
+            seller.setBalance(seller.getBalance() + boughtItem.getCost());
+            int index = 0;
+            for (Item i : items) {
+                if (i == boughtItem) {
+                    items.remove(index);
+                }
+                index++;
+            }
+        }
+    }
 }
