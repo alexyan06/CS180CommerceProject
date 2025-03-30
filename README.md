@@ -8,3 +8,9 @@ add-item Laptop 500.0 Alice
 list-items
 send-msg Alice Bob Hi Bob, interested in your headphones?
 view-msgs
+
+
+Ideas needed:
+- ProcessTransaction in Database
+- Changing Test Cases in main
+- Making messages to each user
