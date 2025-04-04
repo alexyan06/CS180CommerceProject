@@ -1,4 +1,4 @@
-public class Item {
+public class Item implements ItemInterface {
     private String name;
     private double cost;
     private String seller;
