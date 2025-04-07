@@ -1,11 +1,20 @@
 import java.util.ArrayList;
 
-public class Database1 implements DatabaseInterface{
+/**
+ * Phase 1 of CS180 Group Project
+ *
+ * <p>Purdue University -- CS18000 -- Spring 2025</p>
+ *
+ * @author alexyan06, shivensaxena28, wang6377, KayshavBhardwaj
+ * @version April 6, 2025
+ */
+public class Database1 implements DatabaseInterface {
     private ArrayList<User> users = new ArrayList<User>();
     private ArrayList<Item> items = new ArrayList<Item>();
     private ArrayList<Message> messages = new ArrayList<Message>();
 
-    public synchronized boolean addUser(String username, String password, double balance, ArrayList<String> messageUser) {
+    public synchronized boolean addUser(String username,
+                                        String password, double balance, ArrayList<String> messageUser) {
         for (User user : users) {
             if (user.getUsername().equals(username)) {
                 return false;
@@ -115,10 +124,10 @@ public class Database1 implements DatabaseInterface{
         User receiverUser = getUser(receiverUsername);
 
         if (senderUser != null && receiverUser != null) {
-            if (!senderUser.getMessageUsername().contains(receiverUsername)) {
+            if (!senderUser.getMessageUsernameList().contains(receiverUsername)) {
                 senderUser.addMessageUsername(receiverUsername);
             }
-            if (!receiverUser.getMessageUsername().contains(senderUsername)) {
+            if (!receiverUser.getMessageUsernameList().contains(senderUsername)) {
                 receiverUser.addMessageUsername(senderUsername);
             }
         }
@@ -131,7 +140,7 @@ public class Database1 implements DatabaseInterface{
             return new ArrayList<>();
         }
         // Retrieve the list of contacts the user has messaged with
-        ArrayList<String> contacts = user.getMessageUsername();
+        ArrayList<String> contacts = user.getMessageUsernameList();
         ArrayList<Message> userMessages = new ArrayList<>();
 
         // Iterate over the global list of messages

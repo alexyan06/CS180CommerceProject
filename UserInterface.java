@@ -1,5 +1,13 @@
 import java.util.ArrayList;
 
+/**
+ * Phase 1 of CS180 Group Project
+ *
+ * <p>Purdue University -- CS18000 -- Spring 2025</p>
+ *
+ * @author alexyan06, shivensaxena28, wang6377, KayshavBhardwaj
+ * @version April 6, 2025
+ */
 public interface UserInterface {
 
     public ArrayList<Item> getOwnedItems();
@@ -20,9 +28,9 @@ public interface UserInterface {
 
     public void setPassword(String password);
 
-    public ArrayList<String> getMessageUsername();
+    public ArrayList<String> getMessageUsernameList();
 
-    public void setMessageUsername(ArrayList<String> messageUsername);
+    public void setMessageUsernameList(ArrayList<String> messageUsernameList);
 
     public void addMessageUsername(String messageUsername);
 
