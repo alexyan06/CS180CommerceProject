@@ -1,3 +1,4 @@
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,10 +35,10 @@ public class Phase1Testing {
     public void testSearchItem() {
         db.addItem("Basketball", 30.0, "bob");
         Item found = db.searchItem("basketball");
-        assertNotNull(found);
+        Assertions.assertNotNull(found);
         assertEquals("Basketball", found.getName());
 
-        assertNull(db.searchItem("Laptop"));
+        Assertions.assertNull(db.searchItem("Laptop"));
     }
 
     @Test
@@ -46,10 +47,10 @@ public class Phase1Testing {
         db.sendMessage("bob", "alice", "Hey Alice!");
 
         ArrayList<Message> convo = db.getSenderToReceiverMessage("alice", "bob");
-        assertEquals(2, convo.size());
+        Assertions.assertEquals(2, convo.size());
 
         ArrayList<Message> aliceMsgs = db.getSingleUserMessage("alice");
-        assertEquals(2, aliceMsgs.size());
+        Assertions.assertEquals(2, aliceMsgs.size());
     }
 
     @Test
@@ -88,12 +89,12 @@ public class Phase1Testing {
         db.sendMessage("charlie", "alice", "Hello!");
 
         assertTrue(db.deleteUser("charlie", "pass3"));
-        assertNull(db.getUser("charlie"));
+        Assertions.assertNull(db.getUser("charlie"));
 
         // Item and messages removed
         assertEquals(0, db.getItems().size());
         for (Message m : db.getMessages()) {
-            assertFalse(m.getSender().equals("charlie") || m.getReceiver().equals("charlie"));
+            Assertions.assertFalse(m.getSender().equals("charlie") || m.getReceiver().equals("charlie"));
         }
     }
 }
