@@ -30,6 +30,6 @@ public class Message implements MessageInterface {
     }
 
     public String toString() {
-        return sender + "> " + receiver + ": " + message;
+        return sender + " " + receiver + " " + message;
     }
 }

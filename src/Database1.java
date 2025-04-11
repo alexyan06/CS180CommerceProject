@@ -154,6 +154,14 @@ public class Database1 implements DatabaseInterface {
         return userMessages;
     }
 
+    public synchronized ArrayList<String> getMessageUserList(String username) {
+        User user = getUser(username);
+        if (user == null) {
+            return new ArrayList<>();
+        }
+        return user.getMessageUsernameList();
+    }
+
     public synchronized ArrayList<Message> getSenderToReceiverMessage(String sender, String receiver) {
         ArrayList<Message> conversation = new ArrayList<>();
         for (Message message : messages) {
