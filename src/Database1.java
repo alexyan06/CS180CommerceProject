@@ -1,11 +1,11 @@
 import java.util.ArrayList;
 
 /**
- * Phase 1 of CS180 Group Project
+ * Phase 2 of CS180 Group Project
  *
- * <p>Purdue University -- CS18000 -- Spring 2025</p>
+ * Purdue University -- CS18000 -- Spring 2025
  *
- * @author alexyan06, shivensaxena28, wang6377, KayshavBhardwaj
+ * @author alexyan06, shivensaxena28, KayshavBhardwaj
  * @version April 6, 2025
  */
 public class Database1 implements DatabaseInterface {
@@ -25,7 +25,7 @@ public class Database1 implements DatabaseInterface {
         return true;
     }
 
-    // ✅ DELETE USER + CLEANUP THEIR LISTINGS & MESSAGES
+    // DELETE USER + CLEANUP THEIR LISTINGS & MESSAGES
     public synchronized boolean deleteUser(String username, String password) {
         User userToDelete = getUser(username);
         if (userToDelete != null && userToDelete.getPassword().equals(password)) {
@@ -101,13 +101,13 @@ public class Database1 implements DatabaseInterface {
         return new ArrayList<>(items);
     }
 
-    // ✅ LOGIN VALIDATION
+    // LOGIN VALIDATION
     public synchronized boolean login(String username, String password) {
         User user = getUser(username);
         return user != null && user.getPassword().equals(password);
     }
 
-    // ✅ SEARCH ITEM BY NAME (case-insensitive)
+    // SEARCH ITEM BY NAME (case-insensitive)
     public synchronized Item searchItem(String name) {
         for (Item item : items) {
             if (item.getName().equalsIgnoreCase(name)) {

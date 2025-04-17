@@ -1,9 +1,9 @@
 /**
- * Phase 1 of CS180 Group Project
+ * Phase 2 of CS180 Group Project
  *
- * <p>Purdue University -- CS18000 -- Spring 2025</p>
+ * Purdue University -- CS18000 -- Spring 2025
  *
- * @author alexyan06, shivensaxena28, wang6377, KayshavBhardwaj
+ * @author alexyan06, shivensaxena28, KayshavBhardwaj
  * @version April 6, 2025
  */
 public class Message implements MessageInterface {
