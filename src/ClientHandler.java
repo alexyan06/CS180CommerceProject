@@ -123,7 +123,7 @@ public class ClientHandler implements Runnable {
                 if (found != null) {
                     // Format search result cost to two decimals
                     String price = String.format("%.2f", found.getCost());
-                    out.println("Found item: " + found.getName() + ", $" + price + ", Seller: " + found.getSeller());
+                    out.println("Found item: " + found.getName() + " - $" + price + " - Seller: " + found.getSeller());
                 } else {
                     out.println("Item not found.");
                 }
@@ -155,7 +155,8 @@ public class ClientHandler implements Runnable {
                 }
                 User user = db.getUser(currentUser.getUsername());
                 double balance = user.getBalance();
-                out.println(balance);
+                String formattedBalance = String.format("%.2f", balance);
+                out.println("$" + formattedBalance);
                 break;
 
             case "deleteitem":
