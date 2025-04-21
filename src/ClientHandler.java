@@ -85,7 +85,10 @@ public class ClientHandler implements Runnable {
                 try {
                     double cost = Double.parseDouble(args[1]);
                     boolean added = db.addItem(args[0], cost, currentUser.getUsername());
-                    out.println(added ? "Item listed: " + args[0] + " for $" + cost : "Item already exists.");
+                    // Format price to two decimal places
+                    String price = String.format("%.2f", cost);
+                    out.println(added ? "Item listed: " + args[0] + " for $" + price
+                            : "Item already exists.");
                 } catch (NumberFormatException e) {
                     out.println("Invalid cost.");
                 }
@@ -93,7 +96,9 @@ public class ClientHandler implements Runnable {
 
             case "listitems":
                 for (Item item : db.getItems()) {
-                    out.println(item.getName() + " - $" + item.getCost() + " - Seller: " + item.getSeller());
+                    // Format item cost to two decimals
+                    String price = String.format("%.2f", item.getCost());
+                    out.println(item.getName() + " - $" + price + " - Seller: " + item.getSeller());
                 }
                 break;
 
@@ -103,7 +108,9 @@ public class ClientHandler implements Runnable {
                     return;
                 }
                 for (Item item : currentUser.getOwnedItems()) {
-                    out.println(item.getName() + " - $" + item.getCost());
+                    // Format my item cost to two decimals
+                    String price = String.format("%.2f", item.getCost());
+                    out.println(item.getName() + " - $" + price);
                 }
                 break;
 
@@ -114,7 +121,9 @@ public class ClientHandler implements Runnable {
                 }
                 Item found = db.searchItem(args[0]);
                 if (found != null) {
-                    out.println("Found item: " + found.getName() + ", $" + found.getCost() + ", Seller: " + found.getSeller());
+                    // Format search result cost to two decimals
+                    String price = String.format("%.2f", found.getCost());
+                    out.println("Found item: " + found.getName() + " - $" + price + " - Seller: " + found.getSeller());
                 } else {
                     out.println("Item not found.");
                 }
@@ -146,7 +155,8 @@ public class ClientHandler implements Runnable {
                 }
                 User user = db.getUser(currentUser.getUsername());
                 double balance = user.getBalance();
-                out.println(balance);
+                String formattedBalance = String.format("%.2f", balance);
+                out.println("$" + formattedBalance);
                 break;
 
             case "deleteitem":
@@ -220,3 +230,4 @@ public class ClientHandler implements Runnable {
         }
     }
 }
+
