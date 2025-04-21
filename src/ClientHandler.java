@@ -2,6 +2,10 @@ import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 
+/**
+ * Handles incoming commands from a single client connection.
+ * Supports registration, login, item management, messaging, and sales.
+ */
 public class ClientHandler implements Runnable {
     private Socket socket;
     private BufferedReader in;
@@ -13,6 +17,7 @@ public class ClientHandler implements Runnable {
         this.socket = socket;
     }
 
+    @Override
     public void run() {
         try {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -35,31 +40,27 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    /**
+     * Parse and execute a single command from the client.
+     */
     private void handleCommand(String input) {
         String[] parts = input.split(" ", 2);
-        String command = parts[0].toLowerCase();
-        String[] args = parts.length > 1 ? parts[1].split(" ") : new String[0];
-
-        switch (command) {
+        String cmd = parts[0].toLowerCase();
+        String[] args = parts.length>1 ? parts[1].split(" ") : new String[0];
+        switch (cmd) {
             case "register":
-                if (args.length < 3) {
-                    out.println("Usage: register <username> <password> <balance>");
-                    return;
-                }
+                if (args.length < 3) { out.println("Usage: register <username> <password> <balance>"); break; }
                 try {
-                    double balance = Double.parseDouble(args[2]);
-                    boolean created = db.addUser(args[0], args[1], balance, new ArrayList<>());
-                    out.println(created ? "User registered." : "Username already exists.");
+                    double bal = Double.parseDouble(args[2]);
+                    boolean ok = db.addUser(args[0], args[1], bal, new ArrayList<>());
+                    out.println(ok ? "User registered." : "Username already exists.");
                 } catch (NumberFormatException e) {
                     out.println("Invalid balance.");
                 }
                 break;
 
             case "login":
-                if (args.length < 2) {
-                    out.println("Usage: login <username> <password>");
-                    return;
-                }
+                if (args.length < 2) { out.println("Usage: login <username> <password>"); break; }
                 if (db.login(args[0], args[1])) {
                     currentUser = db.getUser(args[0]);
                     out.println("Login successful.");
@@ -74,149 +75,149 @@ public class ClientHandler implements Runnable {
                 break;
 
             case "additem":
-                if (currentUser == null) {
-                    out.println("Please login first.");
-                    return;
-                }
-                if (args.length < 2) {
-                    out.println("Usage: additem <name> <cost>");
-                    return;
-                }
+                if (checkLoggedIn()) break;
+                if (args.length<2) { out.println("Usage: additem <name> <cost>"); break; }
                 try {
                     double cost = Double.parseDouble(args[1]);
-                    boolean added = db.addItem(args[0], cost, currentUser.getUsername());
-                    out.println(added ? "Item listed: " + args[0] + " for $" + cost : "Item already exists.");
+                    boolean ok = db.addItem(args[0], cost, currentUser.getUsername());
+                    out.println(ok ? "Item added to inventory." : "Failed to add item.");
                 } catch (NumberFormatException e) {
                     out.println("Invalid cost.");
                 }
                 break;
 
+            case "sellitem":
+                if (checkLoggedIn()) break;
+                if (args.length<1) { out.println("Usage: sellitem <itemname>"); break; }
+                out.println(db.sellItem(currentUser.getUsername(), args[0])
+                        ? "Item listed for sale." : "Cannot sell: not in inventory or already listed.");
+                break;
+
+            case "unsellitem":
+                if (checkLoggedIn()) break;
+                if (args.length<1) { out.println("Usage: unsellitem <itemname>"); break; }
+                out.println(db.unsellItem(currentUser.getUsername(), args[0])
+                        ? "Item removed from sale." : "Cannot unlist: not listed by you.");
+                break;
+
             case "listitems":
-                for (Item item : db.getItems()) {
-                    out.println(item.getName() + " - $" + item.getCost() + " - Seller: " + item.getSeller());
+                for (Item i : db.getItems()) {
+                    out.println(i.getName() + " - $" + String.format("%.2f", i.getCost())
+                            + " - Seller: " + i.getSeller());
                 }
                 break;
 
             case "myitems":
-                if (currentUser == null) {
-                    out.println("Please login first.");
-                    return;
-                }
+                if (checkLoggedIn()) break;
                 for (Item item : currentUser.getOwnedItems()) {
-                    out.println(item.getName() + " - $" + item.getCost());
+                    String price = String.format("%.2f", item.getCost());
+                    out.println(item.getName() + " - $" + price);
                 }
                 break;
 
             case "searchitem":
                 if (args.length < 1) {
                     out.println("Usage: searchitem <itemname>");
-                    return;
-                }
-                Item found = db.searchItem(args[0]);
-                if (found != null) {
-                    out.println("Found item: " + found.getName() + ", $" + found.getCost() + ", Seller: " + found.getSeller());
                 } else {
-                    out.println("Item not found.");
+                    Item f = db.searchItem(args[0]);
+                    if (f != null) {
+                        String price = String.format("%.2f", f.getCost());
+                        out.println("Found item: " + f.getName()
+                                + ", $" + price
+                                + ", Seller: " + f.getSeller());
+                    } else {
+                        out.println("Item not found or not for sale.");
+                    }
                 }
                 break;
 
             case "buy":
-                if (currentUser == null) {
-                    out.println("Please login first.");
-                    return;
-                }
+                if (checkLoggedIn()) break;
                 if (args.length < 1) {
                     out.println("Usage: buy <itemname>");
-                    return;
-                }
-                Item itemToBuy = db.searchItem(args[0]);
-                if (itemToBuy != null) {
-                    User seller = db.getUser(itemToBuy.getSeller());
-                    db.processTransaction(currentUser, seller, itemToBuy);
-                    out.println("Transaction processed.");
                 } else {
-                    out.println("Item not found.");
+                    Item toBuy = db.searchItem(args[0]);
+                    if (toBuy != null) {
+                        User seller = db.getUser(toBuy.getSeller());
+                        db.processTransaction(currentUser, seller, toBuy);
+                        out.println("Transaction processed.");
+                    } else {
+                        out.println("Item not found.");
+                    }
                 }
                 break;
 
             case "getbalance":
-                if (currentUser == null) {
-                    out.println("Please login first.");
-                    return;
-                }
-                User user = db.getUser(currentUser.getUsername());
-                double balance = user.getBalance();
-                out.println(balance);
+                if (checkLoggedIn()) break;
+                double bal = currentUser.getBalance();
+                out.println("$" + String.format("%.2f", bal));
                 break;
 
             case "deleteitem":
-                if (currentUser == null) {
-                    out.println("Please login first.");
-                    return;
-                }
+                if (checkLoggedIn()) break;
                 if (args.length < 1) {
                     out.println("Usage: deleteitem <itemname>");
-                    return;
-                }
-                boolean deleted = db.deleteItem(args[0]);
-                out.println(deleted ? "Item deleted." : "Item not found.");
-                break;
-
-            case "exit":
-                out.println("Goodbye!");
-                try {
-                    socket.close();
-                } catch (IOException ignored) {
+                } else {
+                    Item rem = db.searchItem(args[0]);
+                    if (rem == null) {
+                        out.println("Item not found.");
+                    } else if (!rem.getSeller().equals(currentUser.getUsername())) {
+                        out.println("You can only delete your own items.");
+                    } else {
+                        boolean d = db.deleteItem(args[0]);
+                        out.println(d ? "Item deleted." : "Item could not be deleted.");
+                    }
                 }
                 break;
 
             case "sendmessage":
-                if (currentUser == null) {
-                    out.println("Please login first.");
-                    return;
-                }
+                if (checkLoggedIn()) break;
                 if (args.length < 2) {
                     out.println("Usage: sendmessage <receiver> <message>");
-                    return;
+                } else {
+                    String msg = args[1];
+                    for (int i = 2; i < args.length; i++) msg += " " + args[i];
+                    db.sendMessage(currentUser.getUsername(), args[0], msg);
+                    out.println("Message sent to " + args[0]);
                 }
-                String appendMessages = args[1];
-                if (args.length > 2) {
-                    for (int i = 2; i < args.length; i++) {
-                        appendMessages += " " + args[i];
-                    }
-                }
-                db.sendMessage(currentUser.getUsername(), args[0], appendMessages);
-                out.println("Message sent to " + args[0]);
                 break;
 
             case "viewuserlist":
-                if (currentUser == null) {
-                    out.println("Please login first.");
-                    return;
-                }
-                ArrayList<String> users = db.getMessageUserList(currentUser.getUsername());
-                for (String m : users) {
-                    out.println(m);
-                }
+                if (checkLoggedIn()) break;
+                ArrayList<String> us = db.getMessageUserList(currentUser.getUsername());
+                if (us.isEmpty()) out.println("No messaging history.");
+                else us.forEach(out::println);
                 break;
 
             case "viewconversation":
-                if (currentUser == null) {
-                    out.println("Please login first.");
-                    return;
-                }
+                if (checkLoggedIn()) break;
                 if (args.length < 1) {
                     out.println("Usage: viewconversation <username>");
-                    return;
-                }
-                ArrayList<Message> convo = db.getSenderToReceiverMessage(currentUser.getUsername(), args[0]);
-                for (Message m : convo) {
-                    out.println(m);
+                } else {
+                    for (Message m : db.getSenderToReceiverMessage(currentUser.getUsername(), args[0])) {
+                        out.println(m);
+                    }
                 }
                 break;
 
+            case "exit":
+                out.println("Goodbye!");
+                try { socket.close(); } catch (IOException ignored) {}
+                break;
+
             default:
-                out.println("Unknown command: " + command);
+                out.println("Unknown command: " + cmd);
         }
+    }
+
+    /**
+     * Helper: checks login and notifies client, returns true if not logged in.
+     */
+    private boolean checkLoggedIn() {
+        if (currentUser == null) {
+            out.println("Please login first.");
+            return true;
+        }
+        return false;
     }
 }

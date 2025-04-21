@@ -12,7 +12,6 @@ public class User implements UserInterface {
     private String username;
     private String password;
     private double balance;
-    private boolean type; //true = buyer, false = seller
     private ArrayList<String> messageUsernameList;
     private ArrayList<Item> ownedItems;
 

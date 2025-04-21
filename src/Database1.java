@@ -1,202 +1,211 @@
 import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
- * Phase 1 of CS180 Group Project
- *
- * <p>Purdue University -- CS18000 -- Spring 2025</p>
- *
- * @author alexyan06, shivensaxena28, wang6377, KayshavBhardwaj
- * @version April 6, 2025
+ * Phase2 Thread‐Safe Marketplace Database with explicit inventory/listing flow.
  */
 public class Database1 implements DatabaseInterface {
-    private ArrayList<User> users = new ArrayList<User>();
-    private ArrayList<Item> items = new ArrayList<Item>();
-    private ArrayList<Message> messages = new ArrayList<Message>();
+    private ArrayList<User> users = new ArrayList<>();
+    private ArrayList<Item> items = new ArrayList<>();
+    private ArrayList<Message> messages = new ArrayList<>();
 
-    public synchronized boolean addUser(String username,
-                                        String password, double balance, ArrayList<String> messageUser) {
-        for (User user : users) {
-            if (user.getUsername().equals(username)) {
+    @Override
+    public synchronized boolean addUser(String username, String password, double balance, ArrayList<String> messageList) {
+        for (User u : users) {
+            if (u.getUsername().equals(username)) {
                 return false;
             }
         }
-        users.add(new User(username, password, balance, messageUser));
-
+        users.add(new User(username, password, balance, messageList));
         return true;
     }
 
-    // ✅ DELETE USER + CLEANUP THEIR LISTINGS & MESSAGES
+    @Override
     public synchronized boolean deleteUser(String username, String password) {
-        User userToDelete = getUser(username);
-        if (userToDelete != null && userToDelete.getPassword().equals(password)) {
-
-            // 1. Remove their items from marketplace
+        User toRemove = getUser(username);
+        if (toRemove != null && toRemove.getPassword().equals(password)) {
             items.removeIf(item -> item.getSeller().equals(username));
-
-            // 2. Remove messages involving this user
             messages.removeIf(m -> m.getSender().equals(username) || m.getReceiver().equals(username));
-
-            // 3. Remove user
-            users.remove(userToDelete);
+            users.remove(toRemove);
             return true;
         }
         return false;
     }
 
-
-
     public synchronized User getUser(String username) {
-        for (User user: users) {
-            if (user.getUsername().equals(username)) {
-                return user;
+        for (User u : users) {
+            if (u.getUsername().equals(username)) {
+                return u;
             }
         }
-
         return null;
     }
 
-    public synchronized boolean addItem(String name, double cost, String seller) {
-        for (Item item : items) {
-            if (item.getName().equals(name)) {
-                return false;
-            }
-        }
+    @Override
+    public synchronized boolean login(String username, String password) {
+        User u = getUser(username);
+        return u != null && u.getPassword().equals(password);
+    }
 
-        Item newItem = new Item(name, cost, seller);
-        items.add(newItem);
-
-        User sellerUser = getUser(seller);
-        if (sellerUser != null) {
-            sellerUser.addOwnedItem(newItem);
-        }
+    /**
+     * Creates a new item in the user's inventory only (not listed for sale).
+     */
+    @Override
+    public synchronized boolean addItem(String name, double cost, String sellerUsername) {
+        User seller = getUser(sellerUsername);
+        if (seller == null) return false;
+        Item newItem = new Item(name, cost, sellerUsername);
+        seller.addOwnedItem(newItem);
         return true;
     }
 
-    public synchronized boolean deleteItem(String name) {
-        Item itemToRemove = null;
+    /**
+     * Explicitly list an owned item for sale.
+     */
+    public synchronized boolean sellItem(String username, String itemName) {
+        User u = getUser(username);
+        if (u == null) return false;
+        ArrayList<Item> ownerItems = u.getOwnedItems();
+        for (Item ownerItem : ownerItems) {
+            if (ownerItem.getName().equals(itemName) && !ownerItem.isSellable()) {
+                ownerItem.setSellable(true);
+                items.add(ownerItem);
+                u.removeOwnedItem(ownerItem);
+                return true;
+            }
+        }
+        return false;
+    }
 
-        for (Item item : items) {
-            if (item.getName().equals(name)) {
-                itemToRemove = item;
+    /**
+     * Unsell an item: remove from marketplace and return to inventory.
+     */
+    public synchronized boolean unsellItem(String username, String itemName) {
+        User u = getUser(username);
+        if (u == null) return false;
+        for (Item items1: items) {
+            if (items1.getName().equals(itemName) && items1.getSeller().equals(username)
+            && items1.isSellable()) {
+                items1.setSellable(false);
+                items.remove(items1);
+                u.addOwnedItem(items1);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Only returns items currently listed for sale.
+     */
+    public synchronized ArrayList<Item> getItems() {
+        ArrayList<Item> forSale = new ArrayList<>();
+        for (Item i : items) {
+            if (i.isSellable()) {
+                forSale.add(i);
+            }
+        }
+        return forSale;
+    }
+
+    /**
+     * Finds only sellable items by name (case-insensitive).
+     */
+    @Override
+    public synchronized Item searchItem(String name) {
+        for (Item i : items) {
+            if (i.isSellable() && i.getName().equalsIgnoreCase(name)) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public synchronized boolean deleteItem(String name) {
+        Item toRemove = null;
+        for (Item i : items) {
+            if (i.getName().equals(name)) {
+                toRemove = i;
                 break;
             }
         }
-
-        if (itemToRemove != null) {
-            items.remove(itemToRemove); // Remove from marketplace
-
-            // Remove from seller's ownedItems
-            User seller = getUser(itemToRemove.getSeller());
+        if (toRemove != null) {
+            items.remove(toRemove);
+            User seller = getUser(toRemove.getSeller());
             if (seller != null) {
-                seller.removeOwnedItem(itemToRemove);
+                seller.removeOwnedItem(toRemove);
             }
-
             return true;
         }
-
         return false;
     }
 
-    public synchronized ArrayList<Item> getItems() {
-        return new ArrayList<>(items);
-    }
-
-    // ✅ LOGIN VALIDATION
-    public synchronized boolean login(String username, String password) {
-        User user = getUser(username);
-        return user != null && user.getPassword().equals(password);
-    }
-
-    // ✅ SEARCH ITEM BY NAME (case-insensitive)
-    public synchronized Item searchItem(String name) {
-        for (Item item : items) {
-            if (item.getName().equalsIgnoreCase(name)) {
-                return item;
-            }
+    @Override
+    public synchronized void sendMessage(String sender, String receiver, String message) {
+        User s = getUser(sender);
+        User r = getUser(receiver);
+        if (s != null && r != null) {
+            if (!s.getMessageUsernameList().contains(receiver)) s.addMessageUsername(receiver);
+            if (!r.getMessageUsernameList().contains(sender)) r.addMessageUsername(sender);
         }
-        return null;
+        messages.add(new Message(sender, receiver, message));
     }
 
-
-
-    public synchronized void sendMessage(String senderUsername, String receiverUsername, String message) {
-        User senderUser = getUser(senderUsername);
-        User receiverUser = getUser(receiverUsername);
-
-        if (senderUser != null && receiverUser != null) {
-            if (!senderUser.getMessageUsernameList().contains(receiverUsername)) {
-                senderUser.addMessageUsername(receiverUsername);
-            }
-            if (!receiverUser.getMessageUsernameList().contains(senderUsername)) {
-                receiverUser.addMessageUsername(senderUsername);
-            }
-        }
-        messages.add(new Message(senderUsername, receiverUsername, message));
-    }
-
+    @Override
     public synchronized ArrayList<Message> getSingleUserMessage(String username) {
-        User user = getUser(username);
-        if (user == null) {
-            return new ArrayList<>();
-        }
-        // Retrieve the list of contacts the user has messaged with
-        ArrayList<String> contacts = user.getMessageUsernameList();
-        ArrayList<Message> userMessages = new ArrayList<>();
-
-        // Iterate over the global list of messages
-        for (Message message : messages) {
-            // Check if the message involves the user and the other party is in their contacts
-            if (message.getSender().equals(username) && contacts.contains(message.getReceiver()) ||
-                    message.getReceiver().equals(username) && contacts.contains(message.getSender())) {
-                userMessages.add(message);
+        User u = getUser(username);
+        ArrayList<Message> out = new ArrayList<>();
+        if (u == null) return out;
+        for (Message m : messages) {
+            if (m.getSender().equals(username) || m.getReceiver().equals(username)) {
+                out.add(m);
             }
         }
-        return userMessages;
+        return out;
     }
 
     public synchronized ArrayList<String> getMessageUserList(String username) {
-        User user = getUser(username);
-        if (user == null) {
-            return new ArrayList<>();
-        }
-        return user.getMessageUsernameList();
+        User u = getUser(username);
+        return u == null ? new ArrayList<>() : u.getMessageUsernameList();
     }
 
+    @Override
     public synchronized ArrayList<Message> getSenderToReceiverMessage(String sender, String receiver) {
-        ArrayList<Message> conversation = new ArrayList<>();
-        for (Message message : messages) {
-            if ((message.getSender().equals(sender) && message.getReceiver().equals(receiver)) ||
-                    (message.getSender().equals(receiver) && message.getReceiver().equals(sender))) {
-                conversation.add(message);
+        ArrayList<Message> convo = new ArrayList<>();
+        for (Message m : messages) {
+            if ((m.getSender().equals(sender) && m.getReceiver().equals(receiver)) ||
+                    (m.getSender().equals(receiver) && m.getReceiver().equals(sender))) {
+                convo.add(m);
             }
         }
-        return conversation;
+        return convo;
     }
 
+    @Override
     public synchronized ArrayList<Message> getMessages() {
         return new ArrayList<>(messages);
     }
 
-    public String displayThread(String userA, String userB) {
-        ArrayList<Message> convo = getSenderToReceiverMessage(userA, userB);
+    public synchronized String displayThread(String userA, String userB) {
         StringBuilder sb = new StringBuilder();
-        for (Message m : convo) {
+        for (Message m : getSenderToReceiverMessage(userA, userB)) {
             sb.append(m.toString()).append("\n");
         }
         return sb.toString();
     }
 
-
+    @Override
     public synchronized void processTransaction(User buyer, User seller, Item boughtItem) {
         if (buyer.getBalance() < boughtItem.getCost()) {
             System.out.println("Transaction invalid. Buyer balance is less than item cost.");
         } else {
             buyer.setBalance(buyer.getBalance() - boughtItem.getCost());
             seller.setBalance(seller.getBalance() + boughtItem.getCost());
-
             buyer.addOwnedItem(boughtItem);
             seller.removeOwnedItem(boughtItem);
-
+            boughtItem.setSellable(false);
+            boughtItem.setSeller(buyer.getUsername());
             items.remove(boughtItem);
         }
     }
