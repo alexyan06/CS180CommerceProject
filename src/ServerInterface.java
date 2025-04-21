@@ -1,8 +1,10 @@
-
 /**
- * Defines the contract for the Marketplace server's lifecycle.
- * Server classes must implement Runnable to handle client connections
- * and provide a method to stop the server gracefully.
+ * Phase 2 of CS180 Group Project
+ *
+ * <p>Purdue University -- CS18000 -- Spring 2025</p>
+ *
+ * @author alexyan06, shivensaxena28, KayshavBhardwaj
+ * @version April 6, 2025
  */
 public interface ServerInterface {
     /**

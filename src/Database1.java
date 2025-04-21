@@ -2,7 +2,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
- * Phase2 Thread‐Safe Marketplace Database with explicit inventory/listing flow.
+ * Phase 2 of CS180 Group Project
+ *
+ * <p>Purdue University -- CS18000 -- Spring 2025</p>
+ *
+ * @author alexyan06, shivensaxena28, KayshavBhardwaj
+ * @version April 6, 2025
  */
 public class Database1 implements DatabaseInterface {
     private ArrayList<User> users = new ArrayList<>();
@@ -10,7 +15,8 @@ public class Database1 implements DatabaseInterface {
     private ArrayList<Message> messages = new ArrayList<>();
 
     @Override
-    public synchronized boolean addUser(String username, String password, double balance, ArrayList<String> messageList) {
+    public synchronized boolean addUser(String username, String password,
+                                        double balance, ArrayList<String> messageList) {
         for (User u : users) {
             if (u.getUsername().equals(username)) {
                 return false;
@@ -85,7 +91,7 @@ public class Database1 implements DatabaseInterface {
         if (u == null) return false;
         for (Item items1: items) {
             if (items1.getName().equals(itemName) && items1.getSeller().equals(username)
-            && items1.isSellable()) {
+                && items1.isSellable()) {
                 items1.setSellable(false);
                 items.remove(items1);
                 u.addOwnedItem(items1);

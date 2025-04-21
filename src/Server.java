@@ -3,8 +3,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
- * Marketplace server that accepts multiple clients concurrently.
- * Now implements Runnable to meet Phase 2 requirements.
+ * Phase 2 of CS180 Group Project
+ *
+ * <p>Purdue University -- CS18000 -- Spring 2025</p>
+ *
+ * @author alexyan06, shivensaxena28, KayshavBhardwaj
+ * @version April 6, 2025
  */
 public class Server implements Runnable, ServerInterface {
     public static final int PORT = 12345;
@@ -45,7 +49,9 @@ public class Server implements Runnable, ServerInterface {
         if (serverSocket != null && !serverSocket.isClosed()) {
             try {
                 serverSocket.close();
-            } catch (IOException ignored) {}
+            } catch (IOException ignored) {
+
+            }
         }
         System.out.println("Server stopped.");
     }

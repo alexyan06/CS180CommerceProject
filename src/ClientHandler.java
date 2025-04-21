@@ -3,14 +3,18 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 /**
- * Handles incoming commands from a single client connection.
- * Supports registration, login, item management, messaging, and sales.
+ * Phase 2 of CS180 Group Project
+ *
+ * <p>Purdue University -- CS18000 -- Spring 2025</p>
+ *
+ * @author alexyan06, shivensaxena28, KayshavBhardwaj
+ * @version April 6, 2025
  */
 public class ClientHandler implements Runnable {
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
-    private static final Database1 db = new Database1();
+    private static Database1 db = new Database1();
     private User currentUser = null;
 
     public ClientHandler(Socket socket) {
@@ -46,7 +50,7 @@ public class ClientHandler implements Runnable {
     private void handleCommand(String input) {
         String[] parts = input.split(" ", 2);
         String cmd = parts[0].toLowerCase();
-        String[] args = parts.length>1 ? parts[1].split(" ") : new String[0];
+        String[] args = parts.length > 1 ? parts[1].split(" ") : new String[0];
         switch (cmd) {
             case "register":
                 if (args.length < 3) { out.println("Usage: register <username> <password> <balance>"); break; }
