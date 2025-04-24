@@ -13,6 +13,7 @@ public class Database1 implements DatabaseInterface {
     private ArrayList<User> users = new ArrayList<>();
     private ArrayList<Item> items = new ArrayList<>();
     private ArrayList<Message> messages = new ArrayList<>();
+    private ArrayList<Item> ownedItems = new ArrayList<>();
 
     @Override
     public synchronized boolean addUser(String username, String password,
@@ -62,6 +63,7 @@ public class Database1 implements DatabaseInterface {
         if (seller == null) return false;
         Item newItem = new Item(name, cost, sellerUsername);
         seller.addOwnedItem(newItem);
+        ownedItems.add(newItem);
         return true;
     }
 
@@ -76,6 +78,7 @@ public class Database1 implements DatabaseInterface {
             if (ownerItem.getName().equals(itemName) && !ownerItem.isSellable()) {
                 ownerItem.setSellable(true);
                 items.add(ownerItem);
+                ownedItems.remove(ownerItem);
                 u.removeOwnedItem(ownerItem);
                 return true;
             }
@@ -118,7 +121,22 @@ public class Database1 implements DatabaseInterface {
      * Finds only sellable items by name (case-insensitive).
      */
     @Override
-    public synchronized Item searchItem(String name) {
+    public synchronized Item searchSoldItem(String name) {
+        for (Item i : items) {
+            if (i.isSellable() && i.getName().equalsIgnoreCase(name)) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    public synchronized Item searchOwnedItem(String name) {
+        for (Item i : ownedItems) {
+            if (i.getName().equalsIgnoreCase(name)) {
+                return i;
+            }
+        }
+
         for (Item i : items) {
             if (i.isSellable() && i.getName().equalsIgnoreCase(name)) {
                 return i;
@@ -145,6 +163,22 @@ public class Database1 implements DatabaseInterface {
             return true;
         }
         return false;
+    }
+
+    public void changeItemPrice(Item item, double newPrice) {
+        for (Item i : items) {
+            if (i.getName().equals(item.getName())) {
+                i.setCost(newPrice);
+                break;
+            }
+        }
+
+        for (Item i : ownedItems) {
+            if (i.getName().equals(item.getName())) {
+                i.setCost(newPrice);
+                break;
+            }
+        }
     }
 
     @Override
@@ -191,14 +225,6 @@ public class Database1 implements DatabaseInterface {
     @Override
     public synchronized ArrayList<Message> getMessages() {
         return new ArrayList<>(messages);
-    }
-
-    public synchronized String displayThread(String userA, String userB) {
-        StringBuilder sb = new StringBuilder();
-        for (Message m : getSenderToReceiverMessage(userA, userB)) {
-            sb.append(m.toString()).append("\n");
-        }
-        return sb.toString();
     }
 
     @Override

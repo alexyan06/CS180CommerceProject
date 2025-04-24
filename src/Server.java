@@ -50,7 +50,7 @@ public class Server implements Runnable, ServerInterface {
             try {
                 serverSocket.close();
             } catch (IOException ignored) {
-
+                //intentionally blank
             }
         }
         System.out.println("Server stopped.");

@@ -54,10 +54,11 @@ Each client connects to the same local server at `localhost:12345`.
 ```text
 register <user> <pass> <balance>   Create account
 login <user> <pass>                Authenticate
-logout                              Sign out
+logout                             Sign out
 additem <name> <cost>              Add new item to inventory
 sellitem <name>                    List an owned item for sale
 unsellitem <name>                  Remove a listing, return to inventory
+changeitemprice <name> <price>     Changes an items price if the user owns it
 listitems                          Show all items currently listed
 myitems                            Show items currently in your inventory
 searchitem <name>                  Find a specific listed item

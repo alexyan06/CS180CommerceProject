@@ -21,7 +21,7 @@ public class ServerTest {
             try {
                 server.main(new String[]{});
             } catch (Exception ignored) {
-
+                //intentionally blank
             }
         });
         serverThread.setDaemon(true);

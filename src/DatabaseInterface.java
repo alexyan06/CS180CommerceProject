@@ -13,7 +13,8 @@ public interface DatabaseInterface {
     boolean deleteUser(String username, String password);
     boolean addItem(String name, double cost, String sellerUsername);
     boolean deleteItem(String name);
-    Item searchItem(String name);
+    Item searchOwnedItem(String name);
+    Item searchSoldItem(String name);
     void sendMessage(String sender, String receiver, String message);
     ArrayList<Message> getMessages();
     ArrayList<Message> getSingleUserMessage(String username);

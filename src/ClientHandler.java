@@ -40,6 +40,7 @@ public class ClientHandler implements Runnable {
             try {
                 socket.close();
             } catch (IOException ignored) {
+                //intentionally blank
             }
         }
     }
@@ -123,7 +124,7 @@ public class ClientHandler implements Runnable {
                 if (args.length < 1) {
                     out.println("Usage: searchitem <itemname>");
                 } else {
-                    Item f = db.searchItem(args[0]);
+                    Item f = db.searchSoldItem(args[0]);
                     if (f != null) {
                         String price = String.format("%.2f", f.getCost());
                         out.println("Found item: " + f.getName()
@@ -140,7 +141,7 @@ public class ClientHandler implements Runnable {
                 if (args.length < 1) {
                     out.println("Usage: buy <itemname>");
                 } else {
-                    Item toBuy = db.searchItem(args[0]);
+                    Item toBuy = db.searchSoldItem(args[0]);
                     if (toBuy != null) {
                         User seller = db.getUser(toBuy.getSeller());
                         db.processTransaction(currentUser, seller, toBuy);
@@ -162,7 +163,7 @@ public class ClientHandler implements Runnable {
                 if (args.length < 1) {
                     out.println("Usage: deleteitem <itemname>");
                 } else {
-                    Item rem = db.searchItem(args[0]);
+                    Item rem = db.searchOwnedItem(args[0]);
                     if (rem == null) {
                         out.println("Item not found.");
                     } else if (!rem.getSeller().equals(currentUser.getUsername())) {
@@ -170,6 +171,30 @@ public class ClientHandler implements Runnable {
                     } else {
                         boolean d = db.deleteItem(args[0]);
                         out.println(d ? "Item deleted." : "Item could not be deleted.");
+                    }
+                }
+                break;
+
+            case "changeitemprice":
+                if (checkLoggedIn()) break;
+                if (args.length < 2) {
+                    out.println("Usage: changeitemprice <itemname> <newprice>");
+                } else {
+                    Item item2 = db.searchOwnedItem(args[0]);
+                    if (item2 == null) {
+                        out.println("Item not found.");
+                    } else {
+                        try {
+                            double newPrice = Double.parseDouble(args[1]);
+                            if (!item2.getSeller().equals(currentUser.getUsername())) {
+                                out.println("You can only change your own items.");
+                            } else {
+                                db.changeItemPrice(item2, newPrice);
+                                out.println("Item changed to $" + String.format("%.2f", newPrice));
+                            }
+                        } catch (NumberFormatException e) {
+                            out.println("Invalid price.");
+                        }
                     }
                 }
                 break;
