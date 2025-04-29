@@ -180,20 +180,35 @@ public class ClientHandler implements Runnable {
                 if (args.length < 2) {
                     out.println("Usage: changeitemprice <itemname> <newprice>");
                 } else {
+                    Item item1 = db.searchSoldItem(args[0]);
                     Item item2 = db.searchOwnedItem(args[0]);
-                    if (item2 == null) {
+                    if (item2 == null && item1 == null) {
                         out.println("Item not found.");
                     } else {
-                        try {
-                            double newPrice = Double.parseDouble(args[1]);
-                            if (!item2.getSeller().equals(currentUser.getUsername())) {
-                                out.println("You can only change your own items.");
-                            } else {
-                                db.changeItemPrice(item2, newPrice);
-                                out.println("Item changed to $" + String.format("%.2f", newPrice));
+                        if (item1 != null) {
+                            try {
+                                double newPrice = Double.parseDouble(args[1]);
+                                if (!item1.getSeller().equals(currentUser.getUsername())) {
+                                    out.println("You can only change your own items.");
+                                } else {
+                                    db.changeItemPrice(item1, newPrice);
+                                    out.println("Item changed to $" + String.format("%.2f", newPrice));
+                                }
+                            } catch (NumberFormatException e) {
+                                out.println("Invalid price.");
                             }
-                        } catch (NumberFormatException e) {
-                            out.println("Invalid price.");
+                        } else if (item2 != null) {
+                            try {
+                                double newPrice = Double.parseDouble(args[1]);
+                                if (!item2.getSeller().equals(currentUser.getUsername())) {
+                                    out.println("You can only change your own items.");
+                                } else {
+                                    db.changeItemPrice(item2, newPrice);
+                                    out.println("Item changed to $" + String.format("%.2f", newPrice));
+                                }
+                            } catch (NumberFormatException e) {
+                                out.println("Invalid price.");
+                            }
                         }
                     }
                 }

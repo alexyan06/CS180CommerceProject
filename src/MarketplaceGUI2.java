@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.util.HashSet;
 
 /* ========================================================================= */
-public class MarketplaceGUI {
+public class MarketplaceGUI2 {
 
     /* ---- connection / state ---- */
     private ClientConnection conn;
@@ -23,7 +23,7 @@ public class MarketplaceGUI {
     private double  balance     = 0.0;
 
     /* ---- widgets ---- */
-    private final JFrame  frame  = new JFrame("CS180 Marketplace Client #1");
+    private final JFrame  frame  = new JFrame("CS180 Marketplace Client #2");
     private final CardLayout cards = new CardLayout();
     private final JPanel  center   = new JPanel(cards);
     private final JLabel  balLbl   = new JLabel("Balance: $0.00");
@@ -42,7 +42,7 @@ public class MarketplaceGUI {
         new MarketplaceGUI();
     }
 
-    public MarketplaceGUI() {
+    public MarketplaceGUI2() {
         SwingUtilities.invokeLater(this::buildGUI);
     }
 
@@ -218,7 +218,7 @@ public class MarketplaceGUI {
         switch(tab){
             case "items"    -> { itemsPanel.reset(); conn.send("listitems"); }
             case "inventory"-> { invPanel.reset();  conn.send("myitems");  }
-            case "messages" -> { msgPanel.reset(); conn.send("viewuserlist");}
+            case "messages" -> conn.send("viewuserlist");
         }
         conn.send("getbalance");
     }
@@ -483,6 +483,7 @@ public class MarketplaceGUI {
             conn.send("sendmessage "+other+" "+msg);
             msgField.setText("");
             conn.send("viewconversation "+other);
+            refresh("messages");
         }
     }
 
