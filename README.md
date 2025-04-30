@@ -32,7 +32,7 @@ Phase 1:
 - **Testing**
   - JUnit 5 testing that validates all major features
 
-Phase 2
+# Phase 2
 
 **Overview**
 
@@ -104,3 +104,67 @@ exit                               Disconnect from server
    ```
 
 All of the tests should cover all server logic, command parsing, and data operations.
+
+# Phase 3 
+
+**Overview**
+
+Phase 3 adds a full Swing‐based GUI (`MarketplaceGUI.java`) and a reusable `ClientConnection` helper. All client interactions now occur through the GUI, which communicates with the server via `ClientConnection`, handling async updates and user actions.
+
+---
+
+## Features
+
+- **Swing GUI**: Single‐window application with three main views—Items, Inventory, Messages—navigated via a top bar.
+- **ClientConnection**: Encapsulates Socket I/O and listener thread; dispatches each server line to a callback for seamless async updates.
+- **Responsive Layout**: Panels resize with the window. Custom colors and fonts provide a clean, Purdue‐inspired theme.
+- **GUI Commands** (buttons and dialogs replace text commands):
+  - **Add Item**: Popup dialog for name + price
+  - **Sell / Unsell**: Contextual buttons in inventory and items views
+  - **Change Price**: Inline text field + button updates a listing’s price
+  - **Buy Item**: Purchase or remove own listing via confirmation dialog
+  - **Messaging**: Select a user, view a clean DM thread, send new messages
+  - **Balance & Greeting**: Live balance display and personalized welcome
+
+---
+
+## Setup & Run
+
+
+  - **Server**: `Server.main` → Run
+  - **GUI Client**: `MarketplaceGUI.main` → Run
+  - **Second GUI Client**: `MarketplaceGUI2.main` > Run
+
+The GUI will connect automatically to `localhost:12345`.
+
+---
+
+## Manual GUI Walkthrough
+
+1. **Launch Server**
+2. **Run** the GUI:
+  - Register with a username, password, and starting balance
+  - Login to enter the marketplace
+3. **Items Tab**:
+  - View all listed items
+  - Search by name
+  - Buy items (or remove your own via “Unsell”)
+  - Add item
+  - Change your item’s price directly in the list
+4. **Inventory Tab**:
+  - See your owned items
+  - Sell selected inventory items
+  - Delete or change price for your own inventory
+5. **Messages Tab**:
+  - See users you’ve messaged
+  - Select a user to view a threaded, de‐duplicated DM history
+  - Send new messages; scroll shows live updates
+6. **Balance & Logout**:
+  - Balance label updates after every action
+  - Logout returns you to the login screen
+
+---
+
+**Testing**
+
+All previous JUnit tests for server logic and command parsing remain valid. GUI‐listener logic (e.g. sending `changeitemprice`) can be unit‐tested by mocking `ClientConnection` and invoking button actions directly.

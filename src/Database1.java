@@ -97,6 +97,7 @@ public class Database1 implements DatabaseInterface {
                 && items1.isSellable()) {
                 items1.setSellable(false);
                 items.remove(items1);
+                ownedItems.add(items1);
                 u.addOwnedItem(items1);
                 return true;
             }
@@ -148,14 +149,14 @@ public class Database1 implements DatabaseInterface {
     @Override
     public synchronized boolean deleteItem(String name) {
         Item toRemove = null;
-        for (Item i : items) {
+        for (Item i : ownedItems) {
             if (i.getName().equals(name)) {
                 toRemove = i;
                 break;
             }
         }
         if (toRemove != null) {
-            items.remove(toRemove);
+            ownedItems.remove(toRemove);
             User seller = getUser(toRemove.getSeller());
             if (seller != null) {
                 seller.removeOwnedItem(toRemove);
