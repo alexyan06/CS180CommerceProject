@@ -11,25 +11,40 @@ import java.util.ArrayList;
  * @version April 6, 2025
  */
 public class ClientHandler implements Runnable {
+    // Underlying socket connected to the client
     private Socket socket;
+    // Reader for incoming client messages
     private BufferedReader in;
+    // Writer for outgoing responses
     private PrintWriter out;
+    // Shared in-memory database instance
     private static Database1 db = new Database1();
+    // Currently logged-in user for this handler
     private User currentUser = null;
 
+    /**
+     * Constructs a handler for the given client socket.
+     * @param socket the client's socket connection
+     */
     public ClientHandler(Socket socket) {
         this.socket = socket;
     }
 
+    /**
+     * Main loop: sets up streams, greets client, and processes commands until disconnect.
+     */
     @Override
     public void run() {
         try {
+            // Initialize input/output streams
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
 
+            // Send welcome message
             out.println("Welcome to the Marketplace Server!");
 
             String line;
+            // Read and handle each incoming line until client disconnects
             while ((line = in.readLine()) != null) {
                 handleCommand(line);
             }
@@ -37,24 +52,32 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             System.err.println("Client error: " + e.getMessage());
         } finally {
+            // Clean up socket on termination
             try {
                 socket.close();
             } catch (IOException ignored) {
-                //intentionally blank
+                // intentionally blank
             }
         }
     }
 
     /**
-     * Parse and execute a single command from the client.
+     * Parses and executes a single command from the client.
+     * @param input raw command line text
      */
     private void handleCommand(String input) {
+        // Split command and arguments
         String[] parts = input.split(" ", 2);
         String cmd = parts[0].toLowerCase();
         String[] args = parts.length > 1 ? parts[1].split(" ") : new String[0];
+
         switch (cmd) {
             case "register":
-                if (args.length < 3) { out.println("Usage: register <username> <password> <balance>"); break; }
+                // Create a new user with initial balance
+                if (args.length < 3) {
+                    out.println("Usage: register <username> <password> <balance>");
+                    break;
+                }
                 try {
                     double bal = Double.parseDouble(args[2]);
                     boolean ok = db.addUser(args[0], args[1], bal, new ArrayList<>());
@@ -65,7 +88,11 @@ public class ClientHandler implements Runnable {
                 break;
 
             case "login":
-                if (args.length < 2) { out.println("Usage: login <username> <password>"); break; }
+                // Authenticate existing user
+                if (args.length < 2) {
+                    out.println("Usage: login <username> <password>");
+                    break;
+                }
                 if (db.login(args[0], args[1])) {
                     currentUser = db.getUser(args[0]);
                     out.println("Login successful.");
@@ -75,13 +102,18 @@ public class ClientHandler implements Runnable {
                 break;
 
             case "logout":
+                // Clear current session
                 currentUser = null;
                 out.println("Logged out.");
                 break;
 
             case "additem":
+                // Add a new item to user's inventory
                 if (checkLoggedIn()) break;
-                if (args.length<2) { out.println("Usage: additem <name> <cost>"); break; }
+                if (args.length < 2) {
+                    out.println("Usage: additem <name> <cost>");
+                    break;
+                }
                 try {
                     double cost = Double.parseDouble(args[1]);
                     boolean ok = db.addItem(args[0], cost, currentUser.getUsername());
@@ -92,20 +124,29 @@ public class ClientHandler implements Runnable {
                 break;
 
             case "sellitem":
+                // List an owned item for sale
                 if (checkLoggedIn()) break;
-                if (args.length<1) { out.println("Usage: sellitem <itemname>"); break; }
+                if (args.length < 1) {
+                    out.println("Usage: sellitem <itemname>");
+                    break;
+                }
                 out.println(db.sellItem(currentUser.getUsername(), args[0])
                         ? "Item listed for sale." : "Cannot sell: not in inventory or already listed.");
                 break;
 
             case "unsellitem":
+                // Unlist an item, return it to inventory
                 if (checkLoggedIn()) break;
-                if (args.length<1) { out.println("Usage: unsellitem <itemname>"); break; }
+                if (args.length < 1) {
+                    out.println("Usage: unsellitem <itemname>");
+                    break;
+                }
                 out.println(db.unsellItem(currentUser.getUsername(), args[0])
                         ? "Item removed from sale." : "Cannot unlist: not listed by you.");
                 break;
 
             case "listitems":
+                // Display all items currently for sale
                 for (Item i : db.getItems()) {
                     out.println(i.getName() + " - $" + String.format("%.2f", i.getCost())
                             + " - Seller: " + i.getSeller());
@@ -113,6 +154,7 @@ public class ClientHandler implements Runnable {
                 break;
 
             case "myitems":
+                // Show items in the current user's inventory
                 if (checkLoggedIn()) break;
                 for (Item item : currentUser.getOwnedItems()) {
                     String price = String.format("%.2f", item.getCost());
@@ -121,6 +163,7 @@ public class ClientHandler implements Runnable {
                 break;
 
             case "searchitem":
+                // Search for a specific listed item
                 if (args.length < 1) {
                     out.println("Usage: searchitem <itemname>");
                 } else {
@@ -137,6 +180,7 @@ public class ClientHandler implements Runnable {
                 break;
 
             case "buy":
+                // Purchase a listed item
                 if (checkLoggedIn()) break;
                 if (args.length < 1) {
                     out.println("Usage: buy <itemname>");
@@ -153,12 +197,14 @@ public class ClientHandler implements Runnable {
                 break;
 
             case "getbalance":
+                // Show the current user's balance
                 if (checkLoggedIn()) break;
                 double bal = currentUser.getBalance();
                 out.println("$" + String.format("%.2f", bal));
                 break;
 
             case "deleteitem":
+                // Permanently remove an owned listing
                 if (checkLoggedIn()) break;
                 if (args.length < 1) {
                     out.println("Usage: deleteitem <itemname>");
@@ -176,6 +222,7 @@ public class ClientHandler implements Runnable {
                 break;
 
             case "changeitemprice":
+                // Update the price of a listed or owned item
                 if (checkLoggedIn()) break;
                 if (args.length < 2) {
                     out.println("Usage: changeitemprice <itemname> <newprice>");
@@ -185,6 +232,7 @@ public class ClientHandler implements Runnable {
                     if (item2 == null && item1 == null) {
                         out.println("Item not found.");
                     } else {
+                        // Handle sold listings first
                         if (item1 != null) {
                             try {
                                 double newPrice = Double.parseDouble(args[1]);
@@ -197,7 +245,8 @@ public class ClientHandler implements Runnable {
                             } catch (NumberFormatException e) {
                                 out.println("Invalid price.");
                             }
-                        } else if (item2 != null) {
+                        // Handle items not yet listed
+                        } else {
                             try {
                                 double newPrice = Double.parseDouble(args[1]);
                                 if (!item2.getSeller().equals(currentUser.getUsername())) {
@@ -215,6 +264,7 @@ public class ClientHandler implements Runnable {
                 break;
 
             case "sendmessage":
+                // Send a direct message to another user
                 if (checkLoggedIn()) break;
                 if (args.length < 2) {
                     out.println("Usage: sendmessage <receiver> <message>");
@@ -227,6 +277,7 @@ public class ClientHandler implements Runnable {
                 break;
 
             case "viewuserlist":
+                // List all users this client has messaged
                 if (checkLoggedIn()) break;
                 ArrayList<String> us = db.getMessageUserList(currentUser.getUsername());
                 if (us.isEmpty()) out.println("No messaging history.");
@@ -234,6 +285,7 @@ public class ClientHandler implements Runnable {
                 break;
 
             case "viewconversation":
+                // Retrieve conversation thread with another user
                 if (checkLoggedIn()) break;
                 if (args.length < 1) {
                     out.println("Usage: viewconversation <username>");
@@ -245,17 +297,20 @@ public class ClientHandler implements Runnable {
                 break;
 
             case "exit":
+                // Client requested disconnect
                 out.println("Goodbye!");
                 try { socket.close(); } catch (IOException ignored) {}
                 break;
 
             default:
+                // Unrecognized command
                 out.println("Unknown command: " + cmd);
         }
     }
 
     /**
-     * Helper: checks login and notifies client, returns true if not logged in.
+     * Verifies that a user is logged in before executing restricted commands.
+     * @return true if not logged in (and sent prompt), false otherwise
      */
     private boolean checkLoggedIn() {
         if (currentUser == null) {
