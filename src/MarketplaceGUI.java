@@ -317,7 +317,4 @@ public class MarketplaceGUI {
         b.setOpaque(true);
         b.setBorderPainted(false);
     }
-
-    // Inner panel classes (ItemsPanel, InventoryPanel, MessagesPanel, ListItemDialog)
-    // would follow here, each documented similarly.
 }
