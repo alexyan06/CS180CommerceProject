@@ -5,304 +5,504 @@ import java.awt.event.*;
 import java.io.IOException;
 import java.util.HashSet;
 
-/**
- * ===== MarketplaceGUI.java =====
- * Complete Swing GUI for CS180 Marketplace
- * - gradient background
- * - Purdue color theming
- * - validation dialogs
- * - live balance and greeting
- * - custom list renderers and button styling
- */
+/* ========================================================================= */
 public class MarketplaceGUI2 {
-    /* Connection/state */
+
+    /* ---- connection / state ---- */
     private ClientConnection conn;
-    private String currentUser = null;
-    private double balance = 0.0;
+    private String  currentUser = null;
+    private double  balance     = 0.0;
 
-    /* Main frame and layout */
-    private final JFrame frame = new JFrame("CS180 Marketplace Client #1");
+    /* ---- widgets ---- */
+    private final JFrame  frame  = new JFrame("CS180 Marketplace Client #1");
     private final CardLayout cards = new CardLayout();
-    private final JPanel center = new JPanel(cards) {
-        @Override protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g;
-            GradientPaint gp = new GradientPaint(0, 0, purdueGold, 0, getHeight(), Color.WHITE);
-            g2.setPaint(gp);
-            g2.fillRect(0, 0, getWidth(), getHeight());
-        }
-    };
-    private final JLabel balLbl = new JLabel("Balance: $0.00");
-    private final JLabel hiLbl = new JLabel();
+    private final JPanel  center   = new JPanel(cards);
+    private final JLabel  balLbl   = new JLabel("Balance: $0.00");
+    private final JLabel  hiLbl    = new JLabel();
 
-    /* Panels */
-    private ItemsPanel itemsPanel;
+    private ItemsPanel     itemsPanel;
     private InventoryPanel invPanel;
-    private MessagesPanel msgPanel;
+    private MessagesPanel  msgPanel;
 
-    /* Colors */
+    //Colors
     private static final Color purdueGold = new Color(206, 184, 136);
     private static final Color purdueBlack = new Color(0, 0, 0);
 
+    /* ==================================================================== */
     public static void main(String[] args) {
-        UIManager.put("Button.background", purdueBlack);
-        UIManager.put("Button.foreground", purdueGold);
-        SwingUtilities.invokeLater(MarketplaceGUI::new);
+        new MarketplaceGUI();
     }
 
-    public MarketplaceGUI() {
-        buildGUI();
+    public MarketplaceGUI2() {
+        SwingUtilities.invokeLater(this::buildGUI);
     }
 
+    /* ============================ GUI BUILD ============================ */
     private void buildGUI() {
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setSize(800, 600);
+        frame.setSize(800,600);
         frame.setLocationRelativeTo(null);
 
         center.add(new StartPanel(), "start");
 
         itemsPanel = new ItemsPanel();
-        itemsPanel.setBackground(new Color(230,230,245));
-        center.add(itemsPanel, "items");
+        center.add(itemsPanel,"items");
+        invPanel   = new InventoryPanel();
+        center.add(invPanel,"inventory");
+        msgPanel   = new MessagesPanel();
+        center.add(msgPanel,"messages");
 
-        invPanel = new InventoryPanel();
-        invPanel.setBackground(new Color(245,230,230));
-        center.add(invPanel, "inventory");
-
-        msgPanel = new MessagesPanel();
-        msgPanel.setBackground(new Color(230,245,230));
-        center.add(msgPanel, "messages");
-
-        frame.add(center, BorderLayout.CENTER);
+        frame.add(center,BorderLayout.CENTER);
         frame.setVisible(true);
     }
 
+    /* =========================== START PANEL ========================== */
     private class StartPanel extends JPanel implements ActionListener, ClientConnection.LineHandler {
-        private final JTextField user = new JTextField(10);
-        private final JPasswordField pass = new JPasswordField(10);
-        private final JTextField start = new JTextField("100", 10);
+
+        private final JTextField     user  = new JTextField(10);
+        private final JPasswordField pass  = new JPasswordField(10);
+        private final JTextField     start = new JTextField("100",10);
 
         StartPanel() {
             setLayout(null);
             setBackground(purdueGold);
             setOpaque(true);
 
-            JPanel userRow = createRow("Username", user);
-            JPanel passRow = createRow("Password", pass);
-            JPanel registerRow = createRow("Register", start);
-            JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.CENTER));
-            buttonRow.setBackground(purdueGold);
+            JPanel userRow = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            userRow.setBackground(purdueGold);
+            JLabel userName = new JLabel("Username");
+            userName.setOpaque(true);
+            userName.setBackground(purdueBlack);
+            userName.setForeground(purdueGold);
+            userRow.add(userName);
+            userRow.add(user);
+            add(userRow);
 
+            JPanel passRow = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            passRow.setBackground(purdueGold);
+            JLabel passLabel = new JLabel("Password");
+            passLabel.setOpaque(true);
+            passLabel.setBackground(purdueBlack);
+            passLabel.setForeground(purdueGold);
+            passRow.add(passLabel);
+            passRow.add(pass);
+            add(passRow);
+
+            JPanel registerRow = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            registerRow.setBackground(purdueGold);
+            JLabel registerLabel = new JLabel("Register");
+            registerLabel.setOpaque(true);
+            registerLabel.setBackground(purdueBlack);
+            registerLabel.setForeground(purdueGold);
+            registerRow.add(registerLabel);
+            registerRow.add(start);
+            add(registerRow);
+
+            JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            row.setBackground(purdueGold);
             JButton reg = new JButton("Register");
             JButton log = new JButton("Login");
             reg.addActionListener(this);
             log.addActionListener(this);
-            styleButton(reg);
-            styleButton(log);
-            buttonRow.add(reg);
-            buttonRow.add(log);
-            add(userRow);
-            add(passRow);
-            add(registerRow);
-            add(buttonRow);
+            row.add(reg);
+            row.add(log);
+            add(row);
 
             frame.addComponentListener(new ComponentAdapter() {
                 public void componentResized(ComponentEvent e) {
-                    layoutRows(userRow, passRow, registerRow, buttonRow);
+                    Dimension size = frame.getContentPane().getSize();
+                    int panelWidth = (int)(size.width * 0.5); // 50% of frame width
+                    int panelHeight = (int)(size.height * 0.12); // each row about 8% of frame height
+                    int gap = (int)(size.height * 0.01); // gap = 2% of height
+
+                    int totalHeight = 3 * panelHeight + 2 * gap + panelHeight; // 3 input rows + 2 gaps + button row
+
+                    int startY = (size.height - totalHeight) / 2; // center vertically
+                    int startX = (size.width - panelWidth) / 2;    // center horizontally
+
+                    userRow.setBounds(startX, startY, panelWidth, panelHeight);
+                    passRow.setBounds(startX, startY + panelHeight + gap, panelWidth, panelHeight);
+                    registerRow.setBounds(startX, startY + 2 * (panelHeight + gap), panelWidth, panelHeight);
+                    row.setBounds(startX, startY + 3 * (panelHeight + gap), panelWidth, panelHeight);
+
+                    revalidate();
+                    repaint();
                 }
             });
         }
 
-        private JPanel createRow(String labelText, JComponent field) {
-            JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER));
-            row.setBackground(purdueGold);
-            JLabel label = new JLabel(labelText);
-            label.setOpaque(true);
-            label.setBackground(purdueBlack);
-            label.setForeground(purdueGold);
-            row.add(label);
-            row.add(field);
-            return row;
-        }
 
-        private void layoutRows(JPanel... rows) {
-            Dimension size = frame.getContentPane().getSize();
-            int pw = size.width/2;
-            int ph = size.height/8;
-            int gap = size.height/50;
-            int y = (size.height - (rows.length*ph + (rows.length-1)*gap)) / 2;
-            for (JPanel row : rows) {
-                row.setBounds((size.width-pw)/2, y, pw, ph);
-                y += ph + gap;
-            }
-            revalidate(); repaint();
-        }
+        @Override public void actionPerformed(ActionEvent e){
+            try{
+                if(conn==null)
+                    conn = new ClientConnection(Client.HOST,Client.PORT,this);
 
-        @Override public void actionPerformed(ActionEvent e) {
-            try {
-                if (conn==null) conn = new ClientConnection(Client.HOST, Client.PORT, this);
-                String u = user.getText().trim();
-                String p = new String(pass.getPassword()).trim();
-                if (e.getActionCommand().equals("Register"))
+                String u=user.getText().trim();
+                String p=new String(pass.getPassword()).trim();
+
+                if("Register".equals(e.getActionCommand()))
                     conn.send("register "+u+" "+p+" "+start.getText().trim());
-                else conn.send("login "+u+" "+p);
-            } catch(IOException ex) {
-                JOptionPane.showMessageDialog(this, "Server unreachable:\n"+ex.getMessage());
+                else
+                    conn.send("login "+u+" "+p);
+            }catch(IOException ex){
+                JOptionPane.showMessageDialog(this,"Server unreachable:\n"+ex.getMessage());
             }
         }
 
-        @Override public void onLine(String s) {
-            if (s.startsWith("Login successful")) {
+        /* ==== async server lines ==== */
+        @Override public void onLine(String s){
+            if(s.startsWith("Login successful")){
                 currentUser = user.getText().trim();
-                SwingUtilities.invokeLater(() -> {
-                    buildNavbar(); cards.show(center,"items");
+                SwingUtilities.invokeLater(()->{
+                    buildNavbar();
+                    cards.show(center,"items");
                 });
                 conn.send("getbalance"); conn.send("listitems");
-            } else if (s.startsWith("User registered"))
+            }
+            else if(s.startsWith("User registered"))
                 JOptionPane.showMessageDialog(this,"Registered – now press Login.");
-            else if (s.contains("exists")||s.contains("Invalid"))
-                JOptionPane.showMessageDialog(this,s);
-            else if (s.startsWith("$")) {
-                balance = Double.parseDouble(s.substring(1));
+            else if(s.startsWith("Username already exists"))
+                JOptionPane.showMessageDialog(this,"That username is taken.");
+            else if(s.startsWith("Invalid credentials"))
+                JOptionPane.showMessageDialog(this,"Incorrect username or password.");
+            else if(s.startsWith("$")){
+                try{ balance = Double.parseDouble(s.substring(1)); }catch(NumberFormatException ignored){}
                 balLbl.setText("BAL: "+s);
             }
+
             itemsPanel.acceptLine(s);
-            invPanel.acceptLine(s);
-            msgPanel.acceptLine(s);
+            invPanel  .acceptLine(s);
+            msgPanel  .acceptLine(s);
         }
     }
 
-    private void buildNavbar() {
+    /* ============================ NAV BAR ============================= */
+    private void buildNavbar(){
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         bar.setBackground(purdueGold);
-        String[][] tabs = {{"Items","items"},{"Inventory","inventory"},{"Messages","messages"}};
-        for (String[] t:tabs) {
-            JButton b = new JButton(t[0]); styleButton(b);
-            b.addActionListener(e->{cards.show(center,t[1]); refresh(t[1]);});
+        String[][] tabs={{"Items","items"},{"Inventory","inventory"},{"Messages","messages"}};
+        for(String[] t: tabs){
+            JButton b=new JButton(t[0]);
+            String card=t[1];
+            b.addActionListener(e->{ cards.show(center,card); refresh(card); });
             bar.add(b);
         }
+
         JButton logout=new JButton("Logout"), exit=new JButton("Exit");
-        styleButton(logout); styleButton(exit);
         bar.add(logout); bar.add(exit);
         bar.add(Box.createHorizontalStrut(20));
-        hiLbl.setFont(new Font("SansSerif",Font.BOLD,14)); hiLbl.setForeground(purdueBlack);
-        hiLbl.setText("Hi, "+currentUser);
-        bar.add(hiLbl); bar.add(Box.createHorizontalStrut(10)); bar.add(balLbl);
-        logout.addActionListener(e->{if(conn!=null)conn.send("logout");resetPanels();frame.remove(bar);cards.show(center,"start");});
-        exit.addActionListener(e->{if(conn!=null)conn.close();frame.dispose();});
+        hiLbl.setText("Hi, "+currentUser); bar.add(hiLbl);
+        bar.add(Box.createHorizontalStrut(10)); bar.add(balLbl);
+
+        logout.addActionListener(e->{
+            if(conn!=null) conn.send("logout");
+            resetPanels();
+            frame.remove(bar); frame.revalidate(); frame.repaint();
+            cards.show(center,"start");
+        });
+        exit.addActionListener(e->{ if(conn!=null) conn.close(); frame.dispose(); });
+
         frame.add(bar,BorderLayout.NORTH); frame.revalidate();
     }
 
-    private void refresh(String tab) {
-        if(tab.equals("items")) {itemsPanel.reset(); conn.send("listitems");}
-        if(tab.equals("inventory")) {invPanel.reset(); conn.send("myitems");}
-        if(tab.equals("messages")) {msgPanel.reset(); conn.send("viewuserlist");}
+    private void refresh(String tab){
+        switch(tab){
+            case "items"    -> { itemsPanel.reset(); conn.send("listitems"); }
+            case "inventory"-> { invPanel.reset();  conn.send("myitems");  }
+            case "messages" -> { msgPanel.reset(); conn.send("viewuserlist");}
+        }
         conn.send("getbalance");
     }
 
-    private void resetPanels() {
+    private void resetPanels(){
         itemsPanel.reset(); invPanel.reset(); msgPanel.reset();
-        balLbl.setText("BAL: $0.00"); hiLbl.setText(""); currentUser=null;
+        balLbl.setText("BAL: $0.00"); hiLbl.setText("");
+        currentUser=null;
     }
 
-    private void styleButton(JButton b) {
-        b.setBackground(purdueBlack); b.setForeground(purdueGold);
-        b.setOpaque(true); b.setBorderPainted(false);
-    }
-
-    private class ItemsPanel extends JPanel implements ActionListener {
+    /* ============================= ITEMS =============================== */
+    private class ItemsPanel extends JPanel implements ActionListener{
         private final DefaultListModel<String> m=new DefaultListModel<>();
         private final JList<String> list=new JList<>(m);
         private final JTextField search=new JTextField(10);
-        private final JTextField priceFld=new JTextField(5);
-        ItemsPanel() {
+        private final JTextField newPrice = new JTextField(5);
+
+        ItemsPanel(){
             setLayout(new BorderLayout());
-            list.setCellRenderer(new DefaultListCellRenderer(){
-                @Override public Component getListCellRendererComponent(JList<?> l,Object v,int i,boolean sel,boolean f){
-                    Component c=super.getListCellRendererComponent(l,v,i,sel,f);
-                    if(!sel) c.setBackground((i%2==0)?new Color(250,250,255):Color.WHITE);
-                    return c;
-                }
-            });
             add(new JScrollPane(list),BorderLayout.CENTER);
-            JPanel south=new JPanel(); south.setBackground(getBackground());
-            JButton searchBtn=new JButton("Search"), buyBtn=new JButton("Buy"), changeBtn=new JButton("Change"), msgBtn=new JButton("Msg"), addBtn=new JButton("Add");
-            for(JButton b:new JButton[]{searchBtn,buyBtn,changeBtn,msgBtn,addBtn}) styleButton(b);
+            setBackground(purdueGold);
+
+            JPanel south=new JPanel();
+            south.setBackground(purdueGold);
+            JButton searchBtn=new JButton("Search"),
+                    buyBtn   =new JButton("Buy/Unsell"),
+                    changeBtn=new JButton("Change Price"),
+                    msgBtn   =new JButton("Message"),
+                    listBtn  =new JButton("Add Item");
+
+            buyBtn.setActionCommand("Buy");
+            changeBtn.setActionCommand("Change");
+
             searchBtn.addActionListener(e->conn.send("searchitem "+search.getText().trim()));
-            buyBtn.setActionCommand("Buy"); changeBtn.setActionCommand("Change");
-            buyBtn.addActionListener(this); changeBtn.addActionListener(this); msgBtn.addActionListener(this);
-            addBtn.addActionListener(e->new ListItemDialog());
+            buyBtn.addActionListener(this);
+            changeBtn.addActionListener(this);
+            msgBtn.addActionListener(this);
+            listBtn.addActionListener(e->new ListItemDialog());
+
             south.add(new JLabel("Item")); south.add(search); south.add(searchBtn);
-            south.add(buyBtn); south.add(priceFld); south.add(changeBtn); south.add(msgBtn); south.add(addBtn);
+            south.add(buyBtn); south.add(newPrice); south.add(changeBtn); south.add(msgBtn); south.add(listBtn);
             add(south,BorderLayout.SOUTH);
         }
+
         void reset(){ SwingUtilities.invokeLater(m::clear); }
-        void acceptLine(String s){ if(s.contains("Seller:")) SwingUtilities.invokeLater(()->m.addElement(s)); }
-        @Override public void actionPerformed(ActionEvent e){ String sel=list.getSelectedValue(); if(sel==null)return;
-            String[] p=sel.split(" - "); String item=p[0]; double pr=Double.parseDouble(p[1].substring(1)); String sl=p[2].split(":")[1].trim();
-            switch(e.getActionCommand()){ case "Buy": if(sl.equals(currentUser)){if(JOptionPane.showConfirmDialog(this,"Remove your own item?","Confirm",JOptionPane.YES_NO_OPTION)==JOptionPane.YES_OPTION){conn.send("unsellitem "+item);reset();}}else if(pr>balance) JOptionPane.showMessageDialog(this,"Insufficient funds."); else conn.send("buy "+item); break;
-                case "Change": try{double np=Double.parseDouble(priceFld.getText());conn.send("changeitemprice "+item+" "+np);}catch(Exception ignored){}break;
-                default: msgPanel.openConversation(sl,true); cards.show(center,"messages"); }
+
+        void acceptLine(String s){
+            if(s.contains("Seller:"))
+                SwingUtilities.invokeLater(()->m.addElement(s));
+
+            else if(s.startsWith("Transaction processed")){
+                JOptionPane.showMessageDialog(this,"Purchase complete!");
+                refresh("items");
+            }
+            else if(s.startsWith("Item removed from sale."))
+                JOptionPane.showMessageDialog(this,"Item removed from market.");
+            else if(s.startsWith("Invalid cost") || s.startsWith("Invalid price"))
+                JOptionPane.showMessageDialog(this,"Invalid price.");
+            else if(s.startsWith("Found item:"))
+                SwingUtilities.invokeLater(()->JOptionPane.showMessageDialog(this,s));
+        }
+
+        @Override public void actionPerformed(ActionEvent e){
+            String sel=list.getSelectedValue(); if(sel==null) return;
+
+            String[] parts=sel.split(" - ");
+            String item   = parts[0];
+            double price  = Double.parseDouble(parts[1].substring(1));
+            String seller = parts[2].substring("Seller:".length()).trim();
+
+            switch(e.getActionCommand()){
+                case "Buy" -> handleBuy(item,price,seller);
+                case "Message" -> {
+                    msgPanel.openConversation(seller,true);
+                    cards.show(center,"messages");
+                }
+                case "Change" -> {
+                    try {
+                        double changePrice = Double.parseDouble(newPrice.getText().trim());
+                        conn.send("changeitemprice " + item + " " + changePrice);
+                        refresh("items");
+                        JOptionPane.showMessageDialog(this, "Your " + item + " price " +
+                                "is now $" + changePrice, "Change", JOptionPane.INFORMATION_MESSAGE);
+                    } catch (NumberFormatException ignored){
+                        //ignored
+                    }
+                }
+            }
+        }
+
+        private void handleBuy(String item,double price,String seller){
+            if(seller.equals(currentUser)){
+                int ans=JOptionPane.showConfirmDialog(this,
+                        "Are you sure you want to take your own item, \""+item+
+                                "\", off the market?","Confirm",
+                        JOptionPane.YES_NO_OPTION);
+                if(ans==JOptionPane.YES_OPTION) {
+                    conn.send("unsellitem "+item);
+                    refresh("items");
+                }
+                return;
+            }
+            if(price>balance){
+                JOptionPane.showMessageDialog(this,"Insufficient funds.");
+                return;
+            }
+            conn.send("buy "+item);
         }
     }
 
-    private class InventoryPanel extends JPanel implements ActionListener {
+    /* =========================== INVENTORY ============================= */
+    private class InventoryPanel extends JPanel implements ActionListener{
         private final DefaultListModel<String> m=new DefaultListModel<>();
         private final JList<String> list=new JList<>(m);
-        private final JTextField priceFld=new JTextField(5);
-        InventoryPanel() {
+        private final JTextField price=new JTextField(5);
+
+        InventoryPanel(){
+            setBackground(purdueGold);
             setLayout(new BorderLayout());
-            list.setCellRenderer(itemsPanel.list.getCellRenderer());
             add(new JScrollPane(list),BorderLayout.CENTER);
-            JPanel south=new JPanel(); south.setBackground(getBackground());
-            JButton sell=new JButton("Sell"), del=new JButton("Delete"), change=new JButton("Change");
-            for(JButton b:new JButton[]{sell,del,change}) styleButton(b);
-            sell.addActionListener(this); del.addActionListener(this); change.addActionListener(this);
-            south.add(sell); south.add(del); south.add(priceFld); south.add(change);
+
+            JPanel south=new JPanel();
+            south.setBackground(purdueGold);
+            JButton sell=new JButton("Sell"), del=new JButton("Delete");
+            JButton changePrice=new JButton("Change");
+            sell.addActionListener(this); del.addActionListener(this);
+            changePrice.addActionListener(this);
+            south.add(sell); south.add(del); south.add(price); south.add(changePrice);
             add(south,BorderLayout.SOUTH);
         }
+
         void reset(){ SwingUtilities.invokeLater(m::clear); }
-        void acceptLine(String s){ if(s.contains(" - $")) SwingUtilities.invokeLater(()->m.addElement(s)); }
-        @Override public void actionPerformed(ActionEvent e){ int i=list.getSelectedIndex(); if(i<0){JOptionPane.showMessageDialog(this,"Select item");return;} String item=list.getSelectedValue().split(" - ")[0]; String cmd=e.getActionCommand();
-            switch(cmd){ case "Sell": conn.send("sellitem "+item); break; case "Delete": conn.send("deleteitem "+item); break; case "Change": try{double np=Double.parseDouble(priceFld.getText());conn.send("changeitemprice "+item+" "+np);}catch(Exception ignored){} break; }
+
+        void acceptLine(String s){
+            if(s.contains(" - $")){
+                SwingUtilities.invokeLater(()->m.addElement(s));
+                return;
+            }
+
+            if(s.startsWith("Item listed for sale")){
+                JOptionPane.showMessageDialog(this,"Item listed successfully!");
+                refresh("inventory");
+            } else if(s.startsWith("Item added to inventory")){
+                JOptionPane.showMessageDialog(this,"Item added to inventory.");
+                refresh("inventory");
+            } else if(s.startsWith("Item deleted")){
+                JOptionPane.showMessageDialog(this,"Item deleted.");
+                refresh("inventory");          // **force full refresh**
+            } else if(s.startsWith("Item not found") || s.startsWith("You can only delete")){
+                JOptionPane.showMessageDialog(this,s);
+            }
+        }
+
+        @Override public void actionPerformed(ActionEvent e){
+            int idx=list.getSelectedIndex();
+            if(idx==-1){ JOptionPane.showMessageDialog(this,"Select an item."); return; }
+
+            String itemName=list.getSelectedValue().split(" - ")[0];
+
+            if("Sell".equals(e.getActionCommand()))
+                conn.send("sellitem "+itemName);
+            if("Delete".equals(e.getActionCommand()))
+                conn.send("deleteitem "+itemName);
+            if("Change".equals(e.getActionCommand()))
+                try {
+                    double finalPriceChange = Double.parseDouble(price.getText());
+                    conn.send("changeitemprice "+ itemName + " " + finalPriceChange);
+                    refresh("inventory");
+                    JOptionPane.showMessageDialog(this, "Your " + itemName + " price " +
+                            "is now $" + finalPriceChange, "Change", JOptionPane.INFORMATION_MESSAGE);
+                } catch (NumberFormatException ignored){
+                    //ignored
+                }
         }
     }
 
-    private class MessagesPanel extends JPanel implements ActionListener {
-        private final DefaultListModel<String> um=new DefaultListModel<>();
-        private final JList<String> users=new JList<>(um);
-        private final DefaultListModel<String> cm=new DefaultListModel<>();
-        private final JList<String> convo=new JList<>(cm);
-        private final JTextField msgFld=new JTextField(20), usrFld=new JTextField(12);
-        private String active=null;
-        MessagesPanel() {
+    /* ============================ MESSAGES ============================= */
+    private class MessagesPanel extends JPanel implements ActionListener{
+        private final DefaultListModel<String> usersM=new DefaultListModel<>();
+        private final JList<String> users=new JList<>(usersM);
+
+        private final DefaultListModel<String> convoM=new DefaultListModel<>();
+        private final JList<String> convo=new JList<>(convoM);
+        private final HashSet<String> convoLines = new HashSet<>();
+
+        private final JTextField msgField   = new JTextField(20);
+        private final JTextField searchUser = new JTextField(12);
+        private String activeOther=null;
+
+        MessagesPanel(){
+            setBackground(purdueGold);
             setLayout(new BorderLayout());
-            JSplitPane split=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,makeUserPanel(),makeConvoPanel());
+
+            JPanel left=new JPanel(new BorderLayout());
+            JPanel searchRow=new JPanel(new FlowLayout());
+            searchRow.setBackground(purdueGold);
+            searchRow.add(new JLabel("Search")); searchRow.add(searchUser);
+            JButton find=new JButton("Go"); find.addActionListener(e->searchForUser());
+            searchRow.add(find);
+            left.add(searchRow,BorderLayout.NORTH);
+            left.add(new JScrollPane(users),BorderLayout.CENTER);
+
+            JPanel right=new JPanel(new BorderLayout());
+            right.add(new JScrollPane(convo),BorderLayout.CENTER);
+            JPanel send=new JPanel();
+            send.setBackground(purdueGold);
+            send.add(new JLabel("Message")); send.add(msgField);
+            JButton sendBtn=new JButton("Send"); sendBtn.addActionListener(this);
+            send.add(sendBtn);
+            right.add(send,BorderLayout.SOUTH);
+
+            JSplitPane split=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,left,right);
             add(split,BorderLayout.CENTER);
+
+            users.addListSelectionListener(e->{
+                if(!e.getValueIsAdjusting()) openConversation(users.getSelectedValue(),false);
+            });
         }
-        private JPanel makeUserPanel(){ JPanel p=new JPanel(new BorderLayout()); p.setBackground(getBackground());
-            JPanel top=new JPanel(); styleButton(new JButton()); top.setBackground(getBackground()); top.add(new JLabel("Find:")); top.add(usrFld);
-            JButton go=new JButton("Go"); styleButton(go); go.addActionListener(e->searchUser()); top.add(go); p.add(top,BorderLayout.NORTH);
-            users.setCellRenderer(itemsPanel.list.getCellRenderer()); p.add(new JScrollPane(users),BorderLayout.CENTER);
-            users.addListSelectionListener(e->{ if(!e.getValueIsAdjusting()) openConversation(users.getSelectedValue(),false); });
-            return p;
+
+        void reset(){ SwingUtilities.invokeLater(()->{
+            usersM.clear(); convoM.clear(); convoLines.clear(); activeOther=null;
+        }); }
+
+        private void searchForUser(){
+            String target=searchUser.getText().trim();
+            if(target.isEmpty() || target.equals(currentUser)) return;
+            openConversation(target,true);
+            if(!usersM.contains(target))
+                JOptionPane.showMessageDialog(this,"User not found.");
         }
-        private JPanel makeConvoPanel(){ JPanel p=new JPanel(new BorderLayout()); p.setBackground(getBackground());
-            convo.setCellRenderer(users.getCellRenderer()); p.add(new JScrollPane(convo),BorderLayout.CENTER);
-            JPanel bot=new JPanel(); bot.setBackground(getBackground()); bot.add(new JLabel("Msg:")); bot.add(msgFld);
-            JButton send=new JButton("Send"); styleButton(send); send.addActionListener(this); bot.add(send); p.add(bot,BorderLayout.SOUTH);
-            return p;
+
+        void openConversation(String other, boolean forceAdd){
+            if(other==null) return;
+            activeOther=other;
+            convoM.clear(); convoLines.clear();
+            if(forceAdd && !usersM.contains(other)) usersM.addElement(other);
+            conn.send("viewconversation "+other);
         }
-        void reset(){ SwingUtilities.invokeLater(()->{um.clear();cm.clear();active=null;}); }
-        void searchUser(){ String u=usrFld.getText().trim(); if(u.isEmpty()||u.equals(currentUser))return; openConversation(u,true); if(!um.contains(u)) JOptionPane.showMessageDialog(this,"No user."); }
-        void openConversation(String u,boolean add){ if(u==null)return; active=u; cm.clear(); if(add&&!um.contains(u)) um.addElement(u); conn.send("viewconversation "+u); cards.show(center,"messages"); }
-        void acceptLine(String s){ if(s.startsWith("No messaging")){ reset(); return;} if(s.startsWith("$"))return; if(!s.contains(" ")&&!s.equals(currentUser)){ if(!um.contains(s)) um.addElement(s); return;} if(active!=null&& (s.startsWith(currentUser+" ")||s.startsWith(active+" "))){ String[] p=s.split(" ",3); String msg="["+p[0]+"] → ["+p[1]+"]: "+p[2]; if(!cm.contains(msg)) SwingUtilities.invokeLater(()->cm.addElement(msg)); }}
-        @Override public void actionPerformed(ActionEvent e){ String o=users.getSelectedValue(); if(o==null){JOptionPane.showMessageDialog(this,"Select user");return;} String m=msgFld.getText().trim(); if(m.isEmpty())return; conn.send("sendmessage "+o+" "+m); msgFld.setText(""); openConversation(o,false); }
+
+        void acceptLine(String s){
+            if(s.startsWith("$")) return;
+
+            if("No messaging history.".equals(s))
+                SwingUtilities.invokeLater(()->{ usersM.clear(); convoM.clear(); });
+
+            else if(!s.contains(" ") && !s.equals(currentUser))
+                SwingUtilities.invokeLater(()->{ if(!usersM.contains(s)) usersM.addElement(s); });
+
+            else if(activeOther!=null &&
+                    (s.startsWith(currentUser+" ")||s.startsWith(activeOther+" "))){
+                String[] p=s.split(" ",3);
+                String pretty="["+p[0]+"] → ["+p[1]+"]: "+p[2];
+                if(convoLines.add(pretty))
+                    SwingUtilities.invokeLater(()->convoM.addElement(pretty));
+            }
+        }
+
+        @Override public void actionPerformed(ActionEvent e){
+            String other=users.getSelectedValue();
+            if(other==null){ JOptionPane.showMessageDialog(this,"Select a user."); return; }
+            String msg=msgField.getText().trim(); if(msg.isEmpty()) return;
+            conn.send("sendmessage "+other+" "+msg);
+            msgField.setText("");
+            conn.send("viewconversation "+other);
+        }
     }
 
-    private class ListItemDialog extends JDialog implements ActionListener {
-        private final JTextField name=new JTextField(10), price=new JTextField(5);
-        ListItemDialog(){ super(frame,"Add new item",true); setLayout(new GridLayout(3,2,5,5)); add(new JLabel("Item")); add(name); add(new JLabel("Price")); add(price); JButton ok=new JButton("Add"); styleButton(ok); ok.addActionListener(this); add(ok); pack(); setLocationRelativeTo(frame); setVisible(true); }
-        @Override public void actionPerformed(ActionEvent e){ try{ double p=Double.parseDouble(price.getText()); if(p<=0){ JOptionPane.showMessageDialog(this,"Price must be >0"); return;} conn.send("additem "+name.getText().trim()+" "+price.getText().trim()); dispose(); }catch(Exception ex){ JOptionPane.showMessageDialog(this,"Invalid price"); }}
+    /* ===================== LIST-NEW-ITEM DIALOG ======================= */
+    private class ListItemDialog extends JDialog implements ActionListener{
+        private final JTextField name=new JTextField(10),
+                price=new JTextField(5);
+        ListItemDialog(){
+            super(frame,"Add new item",true);
+            setLayout(new GridLayout(3,2,5,5));
+            add(new JLabel("Item"));  add(name);
+            add(new JLabel("Price")); add(price);
+            JButton ok=new JButton("Add"); ok.addActionListener(this); add(ok);
+            pack(); setLocationRelativeTo(frame); setVisible(true);
+        }
+        @Override public void actionPerformed(ActionEvent e){
+            String priceTxt=price.getText().trim();
+            double p;
+            try{ p=Double.parseDouble(priceTxt); }
+            catch(NumberFormatException ex){
+                JOptionPane.showMessageDialog(this,"Invalid price.");
+                return;
+            }
+            if(p<=0){
+                JOptionPane.showMessageDialog(this,"Price must be positive.");
+                return;
+            }
+            conn.send("additem "+name.getText().trim()+" "+priceTxt);
+            dispose();
+        }
     }
 }
