@@ -1,12 +1,3 @@
-/*  =====  MarketplaceGUI.java  =====
-    Complete Swing GUI for ISO-Marketplace
-    — negative / zero price validation
-    — username-exists & bad-login dialogs
-    — greeting + live balance
-    — own-item confirmation, insufficient-funds check
-    — clean, de-duplicated conversation view
-    — Delete button now refreshes inventory on success
- */
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
